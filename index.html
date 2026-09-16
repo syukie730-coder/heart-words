@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#faf6f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="心に残る言葉">
+  <meta name="description" content="心に残った言葉と、そのときの気持ちをそっと残す、自分だけの小さな記録帳。">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23faf6f0'/%3E%3Crect x='15' y='9' width='37' height='47' rx='5' fill='%23e4c7b4' stroke='%23825b48' stroke-width='3'/%3E%3Cpath d='M23 10v44M32 24h12M32 32h12' stroke='%23825b48' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+  <title>心に残る言葉</title>
+</head>
+<body>
+  <main>
+    <header class="brand"><div class="brand-rule" aria-hidden="true"></div><p>わたしだけの、小さな宝箱</p><h1>心に残る言葉</h1></header>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <section id="list-view" aria-labelledby="list-heading">
+      <div class="section-heading"><h2 id="list-heading" tabindex="-1">しまっておいた言葉</h2><span id="count">0件</span></div>
+      <div id="entries" class="entries"></div>
+      <div id="empty" class="empty"><span class="quote-mark" aria-hidden="true">“</span><h3>忘れたくない言葉を、ひとつ。</h3><p>誰かがくれたひと言も、<br>本の中で出会った言葉も。<br>そのときの気持ちと一緒に残せます。</p></div>
+      <details class="storage-info"><summary>記録の保存について</summary><p>記録は、このiPhoneのこのブラウザに保存されます。ほかの人に公開されません。</p><p>機種変更やブラウザのデータ削除では、記録は引き継がれません。プライベートブラウズでは使わないでください。</p></details>
+      <div class="bottom-action"><button id="add" class="primary" type="button"><span aria-hidden="true">＋</span> 言葉を残す</button></div>
+    </section>
+    <section id="form-view" aria-labelledby="form-heading" hidden>
+      <button class="back" type="button" data-back>〈 一覧へ</button>
+      <h2 id="form-heading" tabindex="-1">心に残った言葉を残す</h2>
+      <form id="entry-form">
+        <div class="field"><label for="date">日付</label><input id="date" name="date" type="date" required></div>
+        <div class="field"><label for="words">心に残った言葉 <span class="required">必須</span></label><textarea id="words" name="words" rows="4" required placeholder="忘れたくない言葉を、そのまま。"></textarea></div>
+        <div class="field"><label for="speaker">誰が言った言葉か</label><input id="speaker" name="speaker" type="text" placeholder="友達の名前、本の著者など"></div>
+        <div class="field"><label for="thoughts">この言葉を聞いて、私はどう思ったか</label><textarea id="thoughts" name="thoughts" rows="5" placeholder="うれしかったこと、気づいたこと。&#10;今の気持ちを自由に。"></textarea></div>
+        <p id="draft-status" class="draft-status" role="status" aria-live="polite">日付と言葉だけでも残せます。</p>
+        <div class="bottom-action"><button id="save" class="primary" type="submit">この言葉を保存する</button></div>
+      </form>
+    </section>
+    <section id="detail-view" aria-labelledby="detail-heading" hidden>
+      <button class="back" type="button" data-back>〈 一覧へ</button>
+      <h2 id="detail-heading" class="reading-title" tabindex="-1">大切にしまった言葉</h2>
+      <article class="reading"><dl><div class="read-date"><dt>日付</dt><dd id="read-date"></dd></div><div class="read-quote"><dt>心に残った言葉</dt><dd id="read-words"></dd></div><div><dt>誰が言った言葉か</dt><dd id="read-speaker"></dd></div><div class="read-thoughts"><dt>この言葉を聞いて、私はどう思ったか</dt><dd id="read-thoughts"></dd></div></dl><span class="end-mark" aria-hidden="true">◇</span></article>
+      <div class="bottom-action"><button class="primary" type="button" data-add>＋ 新しい言葉を残す</button></div>
+    </section>
+    <noscript>このアプリを使うには、ブラウザのJavaScriptを有効にしてください。</noscript>
+  </main>
+</body>
+</html>
