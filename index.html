@@ -41,8 +41,10 @@
       <button class="back" type="button" data-back>〈 一覧へ</button>
       <h2 id="detail-heading" class="reading-title" tabindex="-1">大切にしまった言葉</h2>
       <article class="reading"><dl><div class="read-date"><dt>日付</dt><dd id="read-date"></dd></div><div class="read-quote"><dt>心に残った言葉</dt><dd id="read-words"></dd></div><div><dt>誰が言った言葉か</dt><dd id="read-speaker"></dd></div><div class="read-thoughts"><dt>この言葉を聞いて、私はどう思ったか</dt><dd id="read-thoughts"></dd></div></dl><span class="end-mark" aria-hidden="true">◇</span></article>
+      <div class="detail-actions"><button id="edit" class="secondary" type="button">直す</button><button id="delete" class="secondary danger" type="button">消す</button></div>
       <div class="bottom-action"><button class="primary" type="button" data-add>＋ 新しい言葉を残す</button></div>
     </section>
+    <div id="undo" class="undo" role="status" aria-live="polite" hidden><span>言葉を消しました。</span><button id="undo-button" type="button">元に戻す</button></div>
     <noscript>このアプリを使うには、ブラウザのJavaScriptを有効にしてください。</noscript>
   </main>
 </body>
