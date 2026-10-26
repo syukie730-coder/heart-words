@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'heart-words-shell-v1';
+const CACHE = 'heart-words-shell-v2';
 const FILES = ['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=> { event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))); });
 self.addEventListener('activate',event=> { event.waitUntil(self.clients.claim()); });

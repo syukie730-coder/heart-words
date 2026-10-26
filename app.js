@@ -4,7 +4,7 @@
   const PREFIX = 'heart-words:v1:entry:';
   const DRAFT = 'heart-words:v1:draft';
   const fields = ['date', 'words', 'speaker', 'thoughts'];
-  let entries = [], timer, dirty = false, blocked = false, formLoaded = false;
+  let entries = [], timer, dirty = false, blocked = false, formLoaded = false, editingId = null, currentId = null, lastDeleted = null, undoTimer;
   function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
   function validDate(value) { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value; }
   function validFields(data) { return data && fields.every(f => typeof data[f] === 'string') && validDate(data.date); }
@@ -13,7 +13,7 @@
   function values() { return Object.fromEntries(fields.map(f => [f,$(f).value])); }
   function saveDraft() {
     clearTimeout(timer);
-    if (!dirty || blocked) return;
+    if (!dirty || blocked || editingId) return;
     try { localStorage.setItem(DRAFT, JSON.stringify(values())); dirty = false; $('draft-status').textContent = '書きかけも、この端末に保存されています。'; }
     catch { $('draft-status').textContent = '書きかけを保存できません。画面を閉じずに、文章を控えてください。'; }
   }
@@ -52,8 +52,22 @@
     }
     try { $('add').textContent = localStorage.getItem(DRAFT) ? '書きかけの言葉を続ける' : '＋ 言葉を残す'; } catch { /* Reading error already visible. */ }
   }
+  function setFormTexts(editing) {
+    $('form-heading').textContent = editing ? '言葉を直す' : '心に残った言葉を残す';
+    $('save').textContent = editing ? '直した内容を保存する' : 'この言葉を保存する';
+  }
+  function findEntry(id) { loadEntries(); return entries.find(e => e.id === id); }
+  function hashId(hash, prefix) { try { return decodeURIComponent(hash.slice(prefix.length)); } catch { return ''; } }
+  function loadEdit(item) {
+    editingId = item.id; blocked = false; dirty = false; formLoaded = false; clearTimeout(timer);
+    for (const field of fields) { $(field).value = item[field]; $(field).disabled = false; $(field).setCustomValidity(''); }
+    $('save').disabled = false;
+    setFormTexts(true);
+    $('draft-status').textContent = '直したら、下の保存ボタンを押してください。';
+  }
   function loadForm() {
     if (formLoaded) return;
+    setFormTexts(false);
     blocked = false;
     let draft = null;
     try {
@@ -68,12 +82,17 @@
   function route(focus = true) {
     if (document.body.dataset.view === 'form') saveDraft();
     const hash = location.hash.slice(1);
-    let view = hash === 'new' ? 'form' : hash.startsWith('entry/') ? 'detail' : 'list';
-    if (view === 'form') loadForm();
+    if (editingId && !hash.startsWith('edit/')) { editingId = null; dirty = false; formLoaded = false; clearTimeout(timer); }
+    let view = hash === 'new' || hash.startsWith('edit/') ? 'form' : hash.startsWith('entry/') ? 'detail' : 'list';
+    if (hash.startsWith('edit/')) {
+      const item = findEntry(hashId(hash,'edit/'));
+      if (!item) { view = 'list'; editingId = null; notice('この記録が見つかりませんでした。一覧から選び直してください。',true); }
+      else if (editingId !== item.id) loadEdit(item);
+    }
+    else if (view === 'form') loadForm();
     else if (view === 'detail') {
-      loadEntries();
-      let id; try { id = decodeURIComponent(hash.slice(6)); } catch { id = ''; }
-      const item = entries.find(e => e.id === id);
+      const item = findEntry(hashId(hash,'entry/'));
+      currentId = item ? item.id : null;
       if (!item) { view = 'list'; notice('この記録が見つかりませんでした。一覧から選び直してください。',true); }
       else { $('read-date').textContent = formatDate(item.date); for (const f of ['words','speaker','thoughts']) $(`read-${f}`).textContent = item[f] || 'まだ書いていません'; }
     }
@@ -87,14 +106,50 @@
   function add() { notice(); location.hash = 'new'; }
   $('add').addEventListener('click',add);
   document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click',add));
-  document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click',()=> { notice(); location.hash = ''; }));
-  for (const field of fields) $(field).addEventListener('input',()=> { $(field).setCustomValidity(''); dirty = true; $('draft-status').textContent = '書きかけを保存しています…'; clearTimeout(timer); timer = setTimeout(saveDraft,350); });
+  document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click',()=> { notice(); location.hash = editingId && document.body.dataset.view === 'form' ? `entry/${encodeURIComponent(editingId)}` : ''; }));
+  for (const field of fields) $(field).addEventListener('input',()=> { $(field).setCustomValidity(''); dirty = true; if (editingId) return; $('draft-status').textContent = '書きかけを保存しています…'; clearTimeout(timer); timer = setTimeout(saveDraft,350); });
+  $('edit').addEventListener('click',()=> { if (!currentId) return; notice(); location.hash = `edit/${encodeURIComponent(currentId)}`; });
+  function hideUndo() { clearTimeout(undoTimer); $('undo').hidden = true; lastDeleted = null; }
+  $('delete').addEventListener('click',()=> {
+    const item = currentId && findEntry(currentId);
+    if (!item) return;
+    const preview = item.words.length > 30 ? item.words.slice(0,30) + '…' : item.words;
+    if (!confirm(`本当に消しますか？\n\n「${preview}」`)) return;
+    try { localStorage.removeItem(PREFIX+item.id); }
+    catch { notice('消せませんでした。もう一度お試しください。',true); return; }
+    hideUndo();
+    lastDeleted = item;
+    notice();
+    location.hash = '';
+    $('undo').hidden = false;
+    undoTimer = setTimeout(hideUndo,8000);
+  });
+  $('undo-button').addEventListener('click',()=> {
+    const item = lastDeleted;
+    if (!item) return;
+    try { localStorage.setItem(PREFIX+item.id,JSON.stringify(item)); }
+    catch { notice('元に戻せませんでした。もう一度「元に戻す」を押してください。',true); return; }
+    hideUndo();
+    notice('元に戻しました。');
+    location.hash = `entry/${encodeURIComponent(item.id)}`;
+  });
   $('entry-form').addEventListener('submit',event => {
     event.preventDefault(); if (blocked) return;
     const data = values();
     if (!data.words.trim()) { $('words').setCustomValidity('心に残った言葉を入力してください。'); $('words').reportValidity(); return; }
     if (!validDate(data.date)) { $('date').setCustomValidity('日付を選んでください。'); $('date').reportValidity(); return; }
     $('save').disabled = true; clearTimeout(timer);
+    if (editingId) {
+      const old = findEntry(editingId);
+      if (!old) { $('save').disabled = false; notice('元の記録が見つかりませんでした。',true); return; }
+      const updated = {...old, ...data, updatedAt:new Date().toISOString()};
+      try { localStorage.setItem(PREFIX+old.id,JSON.stringify(updated)); }
+      catch { $('save').disabled = false; notice('保存できませんでした。直した文章は残っています。もう一度保存してください。',true); return; }
+      editingId = null; dirty = false; formLoaded = false;
+      notice('直した内容を保存しました。');
+      location.hash = `entry/${encodeURIComponent(old.id)}`;
+      return;
+    }
     const item = {...data, id:crypto.randomUUID(), createdAt:new Date().toISOString()};
     try { localStorage.setItem(PREFIX+item.id,JSON.stringify(item)); }
     catch { $('save').disabled = false; notice('保存できませんでした。入力した文章は残っています。画面を閉じずに、もう一度保存してください。',true); return; }
